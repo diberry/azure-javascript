@@ -1,0 +1,44 @@
+name: Check URLs in README
+
+on:
+  # Run on push events but only for the main branch and only when README.md changes
+  push:
+    branches: [ main ]
+    paths:
+      - 'README.md'
+  # Run on pull requests that touch README.md
+  pull_request:
+    paths:
+      - 'README.md'
+  # Run on schedule once a week to catch links that break over time
+  schedule:
+    - cron: '0 0 * * 0'  # Midnight every Sunday
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  check-urls:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check URLs in README.md
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'no'
+          use-verbose-mode: 'yes'
+          config-file: '.github/workflows/mlc_config.json'
+          file-path: './README.md'
+          check-modified-files-only: 'yes'
+          base-branch: 'main'
+
+      - name: Add job summary
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ All URLs in README.md are valid!" >> $GITHUB_STEP_SUMMARY
+          else 
+            echo "❌ Some URLs in README.md are broken. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          fi

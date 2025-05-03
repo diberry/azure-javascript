@@ -3,14 +3,35 @@
 
 If you're looking to get started with JavaScript on Azure, here are Azure-related repositories for your use:
 
-| Sample        | Azure services & SDKs  | [AZD?](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview) | AI? | [DevContainer](https://containers.dev/)
-| ------------- |:-------------| :-----| :- | :- |
-| [azure-typescript-e2e-apps](https://github.com/Azure-Samples/azure-typescript-e2e-apps) | various | ✅ | ✅ | ✅ | 
-| [azure-functions-nodejs-samples](https://github.com/Azure/azure-functions-nodejs-samples) |  [Azure Functions core tools](https://learn.microsoft.com/azure/azure-functions/) | ✅ | - | - | 
-| [azure-functions-ai-services-agent-javascript](https://github.com/azure-samples/azure-functions-ai-services-agent-javascript) | [Azure Functions core tools](https://learn.microsoft.com/azure/azure-functions/), @azure/ai-projects, @azure/identity, @azure/storage-queue |  ✅ | ✅ | ✅ |
-| [azure-typescript-langchainjs](https://github.com/Azure-Samples/azure-typescript-langchainjs)| Express.js, LangChain.js, Azure AI Search, Azure OpenAI | - | ✅ | ✅ |
-| [remote-mcp-functions-typescript](https://github.com/Azure-Samples/remote-mcp-functions-typescript) |  [Azure Functions core tools](https://learn.microsoft.com/azure/azure-functions/), MCP | ✅ | ✅ | ✅ |
+| Sample | Azure services & SDKs | [AZD][azd-link] | [Azure AI][azure-ai-link] | [DevContainer][devcontainer-link] |
+| ------ | --------------------- | :-------------: | :-----------------------: | :------------------------------: |
+| [azure-typescript-e2e-apps][e2e-apps] | various | ✅ | ✅ | ✅ |
+| [azure-functions-nodejs-samples][functions-nodejs] | [Azure Functions][functions-docs] | ✅ | - | - |
+| [azure-functions-ai-services-agent-javascript][functions-ai] | [Azure Functions][functions-docs], [@azure/ai-projects][ai-projects], [@azure/identity][azure-identity], [@azure/storage-queue][storage-queue] | ✅ | ✅ | ✅ |
+| [azure-typescript-langchainjs][typescript-langchain] | [Express.js][expressjs], [LangChain.js][langchainjs], [Azure AI Search][ai-search], [Azure OpenAI][azure-openai] | - | ✅ | ✅ |
+| [remote-mcp-functions-typescript][remote-mcp] | [Azure Functions][functions-docs], [MCP][mcp-docs] | ✅ | ✅ | ✅ |
+
 
 ## Troubleshooting
 
 If you have difficulty wih an issue or PR in these samples, open an issue on this repository. 
+
+
+<!-- Reference Links -->
+[ai-projects]: https://www.npmjs.com/package/@azure/ai-projects
+[ai-search]: https://learn.microsoft.com/azure/search/
+[azd-link]: https://learn.microsoft.com/azure/developer/azure-developer-cli/overview
+[azure-ai-link]: https://learn.microsoft.com/azure/ai-services/
+[azure-identity]: https://www.npmjs.com/package/@azure/identity
+[azure-openai]: https://learn.microsoft.com/azure/ai-services/openai/
+[devcontainer-link]: https://containers.dev/
+[e2e-apps]: https://github.com/Azure-Samples/azure-typescript-e2e-apps
+[expressjs]: https://expressjs.com/
+[functions-ai]: https://github.com/azure-samples/azure-functions-ai-services-agent-javascript
+[functions-docs]: https://learn.microsoft.com/azure/azure-functions/
+[functions-nodejs]: https://github.com/Azure/azure-functions-nodejs-samples
+[langchainjs]: https://js.langchain.com/
+[mcp-docs]: https://learn.microsoft.com/azure/developer/azure-mcp
+[remote-mcp]: https://github.com/Azure-Samples/remote-mcp-functions-typescript
+[storage-queue]: https://www.npmjs.com/package/@azure/storage-queue
+[typescript-langchain]: https://github.com/Azure-Samples/azure-typescript-langchainjs
