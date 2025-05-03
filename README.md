@@ -7,10 +7,9 @@ If you're looking to get started with JavaScript on Azure, here are Azure-relate
 | ------ | --------------------- | :-------------: | :-----------------------: | :------------------------------: |
 | [azure-typescript-e2e-apps][e2e-apps] | various | ✅ | ✅ | ✅ |
 | [azure-functions-nodejs-samples][functions-nodejs] | [Azure Functions][functions-docs] | ✅ | - | - |
-| [azure-functions-ai-services-agent-javascript][functions-ai] | [Azure Functions][functions-docs], [@azure/ai-projects][ai-projects], [@azure/identity][azure-identity], [@azure/storage-queue][storage-queue] | ✅ | ✅ | ✅ |
-| [azure-typescript-langchainjs][typescript-langchain] | [Express.js][expressjs], [LangChain.js][langchainjs], [Azure AI Search][ai-search], [Azure OpenAI][azure-openai] | - | ✅ | ✅ |
-| [remote-mcp-functions-typescript][remote-mcp] | [Azure Functions][functions-docs], [MCP][mcp-docs] | ✅ | ✅ | ✅ |
-
+| [azure-functions-ai-services-agent-javascript][functions-ai] | [Azure Functions][functions-docs]<br>[@azure/ai-projects][ai-projects]<br>[@azure/identity][azure-identity]<br>[@azure/storage-queue][storage-queue] | ✅ | ✅ | ✅ |
+| [azure-typescript-langchainjs][typescript-langchain] | [Express.js][expressjs]<br>[LangChain.js][langchainjs]<br>[Azure AI Search][ai-search]<br>[Azure OpenAI][azure-openai] | - | ✅ | ✅ |
+| [remote-mcp-functions-typescript][remote-mcp] | [Azure Functions][functions-docs]<br>[MCP][mcp-docs] | ✅ | ✅ | ✅ |
 
 ## Troubleshooting
 
