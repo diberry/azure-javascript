@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { SuggestedRepo, RepoData } from '../models.js';
+import { RepositoryItemExtened, RepoData } from '../models.js';
 
 export default class ReportGenerator {
   static async saveReport(markdown: string, filePath: string): Promise<void> {
@@ -61,7 +61,7 @@ export default class ReportGenerator {
   }
 
   static generatSuggestedReposMarkdownReport(
-    repositories: SuggestedRepo[]
+    repositories: RepositoryItemExtened[]
   ): string {
     const timestamp = new Date().toISOString();
     const formattedDate = new Date(timestamp).toLocaleString('en-US', {
@@ -73,6 +73,7 @@ export default class ReportGenerator {
       minute: 'numeric',
       timeZoneName: 'short',
     });
+    let newReadmeReferences: string = '';
 
     let markdown = `# Suggested Azure JavaScript/TypeScript Repositories\n\n`;
     markdown += `*Generated on: ${formattedDate}*\n\n`;
@@ -87,13 +88,15 @@ export default class ReportGenerator {
 
     for (const repo of topRepos) {
       // Format topics
-      const topics = repo.topics.join(', ');
+      const topics = repo?.topics?.join(', ');
 
       // Status indicator (archived or active)
-      const status = repo.isArchived ? '📦 Archived' : '✅ Active';
+      const status = repo?.archived ? '📦 Archived' : '✅ Active';
 
       // Add row to table
-      markdown += `| [${repo.fullName}](${repo.url}) | ${repo.description} | ${repo.stars} | ${repo.lastCommitDate} | ${status} | ${topics} |\n`;
+      markdown += `| [${repo.full_name}](${repo.url}) | ${repo.description} | ${repo.stargazers_count} | ${repo.last_commit_date} | ${status} | ${topics} |\n`;
+
+      newReadmeReferences += `[${repo?.name}]: https://${repo?.org}/${repo.repo}}\n`;
     }
 
     markdown += `\n## How to Add to README\n\n`;
@@ -107,6 +110,8 @@ export default class ReportGenerator {
     markdown +=
       '[service-doc-link]: https://learn.microsoft.com/azure/service-name/\n';
     markdown += '```\n';
+
+    markdown += newReadmeReferences;
 
     return markdown;
   }

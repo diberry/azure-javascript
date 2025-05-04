@@ -1,5 +1,5 @@
 import { Octokit } from 'octokit';
-import { SuggestedRepo } from '../models.js';
+import { RepositoryItemExtened } from '../models.js';
 
 /**
  * Class for searching GitHub repositories with various criteria
@@ -22,7 +22,7 @@ export default class GitHubSearcher {
     query: string,
     maxResults = 100,
     includeArchived = false
-  ): Promise<SuggestedRepo[]> {
+  ): Promise<RepositoryItemExtened[]> {
     // Add archived:false filter if includeArchived is false
     if (!includeArchived && !query.includes('archived:')) {
       query += ' archived:false';
@@ -30,7 +30,7 @@ export default class GitHubSearcher {
 
     console.log(`Searching GitHub repositories with query: ${query}`);
 
-    const repos: SuggestedRepo[] = [];
+    const repos: RepositoryItemExtened[] = [];
     let page = 1;
     let hasMoreRepos = true;
     const perPage = Math.min(100, maxResults); // GitHub API allows max 100 per page
@@ -50,7 +50,10 @@ export default class GitHubSearcher {
           hasMoreRepos = false;
         } else {
           for (const repo of response.data.items) {
-            await this.processRepositoryItem(repo, repos);
+            const extendedRepo: RepositoryItemExtened =
+              await this.processRepositoryItem(repo);
+
+            repos.push(extendedRepo);
 
             if (repos.length >= maxResults) {
               hasMoreRepos = false;
@@ -78,9 +81,8 @@ export default class GitHubSearcher {
    * @param repos Array to add processed repos to
    */
   private async processRepositoryItem(
-    repo: any, // Using 'any' type for repo parameter to avoid type issues
-    repos: SuggestedRepo[]
-  ): Promise<void> {
+    repo: RepositoryItemExtened // Using 'any' type for repo
+  ): Promise<RepositoryItemExtened> {
     // Get the last commit date for this repository
     let lastCommitDate = 'N/A';
 
@@ -109,17 +111,14 @@ export default class GitHubSearcher {
       );
     }
 
-    repos.push({
-      name: repo.name,
-      fullName: repo.full_name,
-      description: repo.description || 'No description provided',
-      url: repo.html_url,
-      stars: repo.stargazers_count,
-      updatedAt: repo.updated_at,
-      topics: repo.topics || [],
-      isArchived: repo.archived || false,
-      lastCommitDate,
-    });
+    const [org, repo_name] = repo.full_name.split('/') as [string, string];
+
+    return {
+      ...repo,
+      last_commit_date: lastCommitDate,
+      org,
+      repo: repo_name,
+    };
   }
 
   /**
@@ -137,8 +136,8 @@ export default class GitHubSearcher {
     updatedSince?: string,
     topics: string[] = ['azure'],
     includeArchived = false
-  ): Promise<SuggestedRepo[]> {
-    const allRepos: SuggestedRepo[] = [];
+  ): Promise<RepositoryItemExtened[]> {
+    const allRepos: RepositoryItemExtened[] = [];
 
     for (const org of orgs) {
       console.log(`\nSearching in organization: ${org}`);
@@ -178,7 +177,9 @@ export default class GitHubSearcher {
    * @param daysBack Number of days to look back for trending repos
    * @returns Array of SuggestedRepo objects
    */
-  async findTrendingAzureRepos(daysBack = 30): Promise<SuggestedRepo[]> {
+  async findTrendingAzureRepos(
+    daysBack = 30
+  ): Promise<RepositoryItemExtened[]> {
     const date = new Date();
     date.setDate(date.getDate() - daysBack);
     const dateString = date.toISOString().split('T')[0];
@@ -196,7 +197,9 @@ export default class GitHubSearcher {
    * @param repoFullName Full repository name (format: owner/repo)
    * @returns Array of SuggestedRepo objects
    */
-  async findSimilarRepos(repoFullName: string): Promise<SuggestedRepo[]> {
+  async findSimilarRepos(
+    repoFullName: string
+  ): Promise<RepositoryItemExtened[]> {
     console.log(`Finding repositories similar to ${repoFullName}`);
 
     const [owner, repo] = repoFullName.split('/');

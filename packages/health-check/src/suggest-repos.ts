@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { SuggestedRepo } from './models.js';
+import { RepositoryItemExtened } from './models.js';
 import ReportGenerator from './reports/report-generator.js';
 import { printEnv } from './utils/print-env.js';
 import { getAuthToken } from './auth/get-auth-token.js';
@@ -47,13 +47,14 @@ async function findRepos(token: string): Promise<void> {
   const collector = new GitHubSearcher(token);
 
   // Search for JavaScript repos
-  const repos: SuggestedRepo[] = await collector.searchOrgRepositories();
+  const repos: RepositoryItemExtened[] =
+    await collector.searchOrgRepositories();
 
   // Generate report
   console.log(`\n📊 Found ${repos.length} total repositories`);
 
   // Sort by stars
-  repos.sort((a, b) => b.stars - a.stars);
+  repos.sort((a, b) => b.stargazers_count - a.stargazers_count);
 
   // Create markdown report
   const mdReport = ReportGenerator.generatSuggestedReposMarkdownReport(repos);

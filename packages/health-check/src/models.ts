@@ -1,3 +1,8 @@
+import { components } from '@octokit/openapi-types';
+
+// Using the types from @octokit/openapi-types
+export type RepositoryItem = components['schemas']['repo-search-result-item'];
+
 export interface Repository {
   name: string;
   org: string;
@@ -125,4 +130,10 @@ export interface RepoData extends Repository {
   dependabotEnabled?: boolean;
   codeScanning?: boolean;
   topics?: string[];
+}
+
+export interface RepositoryItemExtened extends RepositoryItem {
+  last_commit_date?: string | undefined;
+  org?: string | undefined;
+  repo?: string | undefined;
 }
