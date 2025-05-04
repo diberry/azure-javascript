@@ -113,6 +113,7 @@ export default class ReportGenerator {
 
   static generateReadme(reposWithData: RepoData[]): string {
     let newReadme: string = '';
+    let newReadmeReferences: string = '';
 
     // Add the table header with the new Topics column
     newReadme += '| Sample | Description | Topics | Stats |\n';
@@ -126,13 +127,15 @@ export default class ReportGenerator {
       // Format topics as badges
       const topicsFormatted =
         Array.isArray(repo?.topics) && repo?.topics?.length > 0
-          ? repo?.topics?.map(topic => `\`${topic}\``).join('<br>')
+          ? repo?.topics?.map(topic => `\`${topic}\``).join(' ')
           : '-';
 
       // Add the row to the table
       newReadme += `| [${repo?.name}][${repo?.name.toLowerCase().replace(/\s/g, '-')}] | ${repo?.description} | ${topicsFormatted} | ${stats} |\n`;
+
+      newReadmeReferences += `[${repo?.name}]: ${`https://${repo?.org}/${repo.repo}`}\n`;
     }
-    return newReadme;
+    return newReadme + `\n\n` + newReadmeReferences;
   }
 }
 /*

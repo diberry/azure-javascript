@@ -28,7 +28,7 @@ If you have difficulty wih an issue or PR in these samples, open an issue on thi
 [ai-projects]: https://www.npmjs.com/package/@azure/ai-projects
 [ai-search]: https://learn.microsoft.com/azure/search/
 [ally-legal-assistant]: https://github.com/Azure-Samples/ally-legal-assistant
-[azure-search-openai-javascript](https://github.com/Azure-Samples/azure-search-openai-javascript)
+[azure-search-openai-javascript]:https://github.com/Azure-Samples/azure-search-openai-javascript
 [app-service]: https://learn.microsoft.com/azure/app-service/
 [azd-link]: https://learn.microsoft.com/azure/developer/azure-developer-cli/overview
 [azure-ai-link]: https://learn.microsoft.com/azure/ai-services/
