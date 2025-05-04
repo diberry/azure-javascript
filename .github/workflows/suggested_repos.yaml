@@ -1,0 +1,47 @@
+name: Suggest Azure JavaScript/TypeScript Repositories
+
+on:
+  # Run monthly to find new repositories
+  schedule:
+    - cron: '0 0 1 * *'  # Runs at midnight on the first day of each month
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  suggest-repos:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install @octokit/rest @octokit/auth-token
+
+      - name: Find Azure JavaScript & TypeScript Repositories
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/suggested-repos
+          node dist/index.js
+
+      - name: Upload Report as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: suggested-repos-report
+          path: suggested_repos_report.md
+
+      - name: Add job summary
+        run: |
+          echo "# Repository Suggestions" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully generated repository suggestions!" >> $GITHUB_STEP_SUMMARY
+          echo "📊 View the full report in the workflow artifacts section." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Preview of suggested repositories:" >> $GITHUB_STEP_SUMMARY
+          cat suggested_repos_report.md | grep -A 10 "## Top Repositories" | grep -v "## How to Add" >> $GITHUB_STEP_SUMMARY

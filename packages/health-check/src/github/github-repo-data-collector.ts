@@ -1,5 +1,5 @@
-import { Octokit } from "octokit";
-import { Repository } from "./models.js";
+import { Octokit } from 'octokit';
+import { Repository, RepoData } from '../models.js';
 
 export default class RepoDataCollector {
   private octokit: Octokit;
@@ -8,25 +8,14 @@ export default class RepoDataCollector {
     this.octokit = new Octokit({ auth: token });
   }
 
-  async collectRepoData(repo: Repository): Promise<{
-    issuesCount: string;
-    prsCount: string;
-    stars: number;
-    forks: number;
-    watchers: number;
-    lastCommitDate: string;
-    lastCommitterLogin: string;
-    lastCommitterAvatar: string;
-    lastCommitterUrl: string;
-    securityNotices: string;
-    hasVulnerabilities: boolean;
-    dependabotEnabled: boolean;
-    codeScanning: boolean;
-  }> {
+  async collectRepoData(repo: Repository): Promise<RepoData> {
     // Get repository information
     let stars = 0,
       forks = 0,
       watchers = 0;
+    let topics: string[] = [];
+    let description = '';
+
     try {
       const repoInfo = await this.octokit.rest.repos.get({
         owner: repo.org,
@@ -36,51 +25,69 @@ export default class RepoDataCollector {
       stars = repoInfo.data.stargazers_count;
       forks = repoInfo.data.forks_count;
       watchers = repoInfo.data.subscribers_count;
+      description = repoInfo.data.description || '';
+
+      // Fetch topics for the repository
+      try {
+        console.log(`Fetching topics for ${repo.org}/${repo.repo}...`);
+        const topicsData = await this.octokit.rest.repos.getAllTopics({
+          owner: repo.org,
+          repo: repo.repo,
+        });
+        topics = topicsData.data.names || [];
+        console.log(
+          `Found ${topics.length} topics for ${repo.org}/${repo.repo}: ${topics.join(', ')}`
+        );
+      } catch (topicError) {
+        console.error(
+          `Error fetching topics for ${repo.org}/${repo.repo}: ${topicError}`
+        );
+      }
     } catch (error) {
       console.error(
-        `Error fetching repository info for ${repo.org}/${repo.repo}: ${error}`,
+        `Error fetching repository info for ${repo.org}/${repo.repo}: ${error}`
       );
     }
 
     // Get issues count
-    let issuesCount = "0";
+    let issuesCount = '0';
     try {
       const issuesData = await this.octokit.rest.issues.listForRepo({
         owner: repo.org,
         repo: repo.repo,
-        state: "open",
+        state: 'open',
         per_page: 1,
       });
       issuesCount = issuesData.data.length.toString();
     } catch (error) {
       console.error(
-        `Error fetching issues for ${repo.org}/${repo.repo}: ${error}`,
+        `Error fetching issues for ${repo.org}/${repo.repo}: ${error}`
       );
-      issuesCount = "request error";
+      issuesCount = 'request error';
     }
 
     // Get PRs count
-    let prsCount = "0";
+    let prsCount = '0';
     try {
       const prsData = await this.octokit.rest.pulls.list({
         owner: repo.org,
         repo: repo.repo,
-        state: "open",
+        state: 'open',
         per_page: 1,
       });
       prsCount = prsData.data.length.toString();
     } catch (error) {
       console.error(
-        `Error fetching PRs for ${repo.org}/${repo.repo}: ${error}`,
+        `Error fetching PRs for ${repo.org}/${repo.repo}: ${error}`
       );
-      prsCount = "request error";
+      prsCount = 'request error';
     }
 
     // Get last commit date and committer information
-    let lastCommitDate = "N/A";
-    let lastCommitterLogin = "";
-    let lastCommitterAvatar = "";
-    let lastCommitterUrl = "";
+    let lastCommitDate = 'N/A';
+    let lastCommitterLogin = '';
+    let lastCommitterAvatar = '';
+    let lastCommitterUrl = '';
 
     try {
       const commitsData = await this.octokit.rest.repos.listCommits({
@@ -93,9 +100,9 @@ export default class RepoDataCollector {
         const lastCommit = commitsData.data[0];
 
         // Get commit date
-        lastCommitDate = new Date(lastCommit.commit.committer?.date || "")
+        lastCommitDate = new Date(lastCommit.commit.committer?.date || '')
           .toISOString()
-          .split("T")[0];
+          .split('T')[0];
 
         // Get committer information if available
         // GitHub API might return null for author if the commit email doesn't match a GitHub account
@@ -112,13 +119,13 @@ export default class RepoDataCollector {
       }
     } catch (error) {
       console.error(
-        `Error fetching commits for ${repo.org}/${repo.repo}: ${error}`,
+        `Error fetching commits for ${repo.org}/${repo.repo}: ${error}`
       );
-      lastCommitDate = "request error";
+      lastCommitDate = 'request error';
     }
 
     // Check for security vulnerabilities (requires 'security_events' permission)
-    let securityNotices = "none";
+    let securityNotices = 'none';
     let hasVulnerabilities = false;
     try {
       // The correct API endpoint is dependabot.listAlertsForRepo
@@ -127,7 +134,7 @@ export default class RepoDataCollector {
           owner: repo.org,
           repo: repo.repo,
           per_page: 10,
-          state: "open",
+          state: 'open',
         });
 
       if (vulnerabilityAlertsData.data.length > 0) {
@@ -136,9 +143,9 @@ export default class RepoDataCollector {
       }
     } catch (error) {
       console.error(
-        `Error checking security vulnerabilities for ${repo.org}/${repo.repo}: ${error}`,
+        `Error checking security vulnerabilities for ${repo.org}/${repo.repo}: ${error}`
       );
-      securityNotices = "cannot access";
+      securityNotices = 'cannot access';
     }
 
     // Check if Dependabot is enabled
@@ -148,7 +155,7 @@ export default class RepoDataCollector {
       await this.octokit.rest.repos.getContent({
         owner: repo.org,
         repo: repo.repo,
-        path: ".github/dependabot.yml",
+        path: '.github/dependabot.yml',
       });
       dependabotEnabled = true;
     } catch (error) {
@@ -157,7 +164,7 @@ export default class RepoDataCollector {
         await this.octokit.rest.repos.getContent({
           owner: repo.org,
           repo: repo.repo,
-          path: ".github/dependabot.yaml",
+          path: '.github/dependabot.yaml',
         });
         dependabotEnabled = true;
       } catch (innerError) {
@@ -175,18 +182,19 @@ export default class RepoDataCollector {
 
       // Check if any workflow contains CodeQL or code scanning
       codeScanning = workflows.data.workflows.some(
-        (workflow) =>
-          workflow.name.toLowerCase().includes("codeql") ||
-          workflow.name.toLowerCase().includes("code-scanning") ||
-          workflow.name.toLowerCase().includes("code scanning"),
+        workflow =>
+          workflow.name.toLowerCase().includes('codeql') ||
+          workflow.name.toLowerCase().includes('code-scanning') ||
+          workflow.name.toLowerCase().includes('code scanning')
       );
     } catch (error) {
       console.error(
-        `Error checking code scanning for ${repo.org}/${repo.repo}: ${error}`,
+        `Error checking code scanning for ${repo.org}/${repo.repo}: ${error}`
       );
     }
 
     return {
+      description,
       issuesCount,
       prsCount,
       stars,
@@ -200,6 +208,7 @@ export default class RepoDataCollector {
       hasVulnerabilities,
       dependabotEnabled,
       codeScanning,
-    };
+      topics,
+    } as RepoData;
   }
 }

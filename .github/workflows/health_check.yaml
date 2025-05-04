@@ -27,7 +27,7 @@ jobs:
       - name: Run health check
         run: |
           cd packages/health-check
-          node index.js
+          node dist/index.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

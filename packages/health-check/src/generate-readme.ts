@@ -1,0 +1,80 @@
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import RepoDataCollector from './github/github-repo-data-collector.js';
+import { getAuthToken } from './auth/get-auth-token.js';
+import { printEnv } from './utils/print-env.js';
+import { RepoData, Repository } from './models.js';
+import ReportGenerator from './reports/report-generator.js';
+import { extractOrgAndRepo } from './utils/regex.js';
+
+printEnv();
+
+// Check for GitHub token
+if (!process.env.GITHUB_TOKEN && !process.argv[2]) {
+  throw new Error(
+    'GitHub token is required. Set GITHUB_TOKEN environment variable or pass token as argument.'
+  );
+}
+
+const token = getAuthToken(process.argv[2]);
+
+if (!token) {
+  console.error(
+    'GitHub token not provided. Please set GITHUB_TOKEN environment variable or pass as first argument.'
+  );
+  process.exit(1);
+}
+
+async function run(token: string): Promise<void> {
+  try {
+    // Initialize data collector
+    const collector = new RepoDataCollector(token);
+
+    const dataFile = process.env.DATA_FILE || 'repos.json';
+
+    // Read repos.json
+    const reposJsonPath: string = path.join(process.cwd(), '../../', dataFile);
+    console.log(`Reading JSON list from ${reposJsonPath}`);
+    const reposContent: string = await fs.readFile(reposJsonPath, 'utf8');
+    console.log(`Read ${reposContent.length} characters from `, dataFile);
+
+    // Extract repositories
+    const reposJson = JSON.parse(reposContent);
+    console.log(`Found ${reposJson.length} repositories in `, dataFile);
+    const repos: Repository[] = extractOrgAndRepo(reposJson);
+
+    // Collect data for each repository using the enhanced collectRepoData
+    const reposWithData: RepoData[] = [];
+    for (const repo of repos) {
+      console.log(`Processing ${repo.org}/${repo.repo}...`);
+
+      // Use collectRepoData to get all repository information at once
+      const repoData: RepoData = await collector.collectRepoData(repo);
+
+      reposWithData.push({
+        ...repo,
+        description: repoData.description,
+        stars: repoData.stars,
+        watchers: repoData.watchers,
+        lastCommitDate: repoData.lastCommitDate,
+        topics: repoData.topics,
+      });
+    }
+
+    // Generate new README content
+    const newReadmeContent = ReportGenerator.generateReadme(reposWithData);
+
+    // Save the new README
+    const newReadmePath = path.join(process.cwd(), '../../', 'README.new.md');
+    await fs.writeFile(newReadmePath, newReadmeContent);
+    console.log(`New README.md generated at ${newReadmePath}`);
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+run(token).catch(error => {
+  console.error('Error generating README:', error);
+  process.exit(1);
+});
