@@ -3,6 +3,9 @@ import { components } from '@octokit/openapi-types';
 // Using the types from @octokit/openapi-types
 export type RepositoryItem = components['schemas']['repo-search-result-item'];
 
+// Using the OpenAPI types for the repos.get method
+export type GetRepoResponse = components['schemas']['full-repository'];
+
 export interface Repository {
   name: string;
   org: string;
