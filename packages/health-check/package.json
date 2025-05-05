@@ -18,7 +18,8 @@
     "lint:check": "eslint \"src/**/*.ts\"",
     "start:suggest": "node ./dist/suggest-repos.js",
     "start:health": "node ./dist/health-check.js",
-    "start:readme": "node ./dist/generate-readme.js"
+    "start:readme": "node ./dist/generate-readme.js",
+    "start:advocate-activity": "node ./dist/cloud-advocate-activity.js"
   },
   "author": "",
   "license": "ISC",
