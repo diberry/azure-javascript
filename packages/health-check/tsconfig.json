@@ -21,6 +21,6 @@
       "resolveJsonModule": true,
       "sourceMap": true
     },
-    "include": ["src/**/*.ts"],
+    "include": ["src/**/*.ts", "src/github/github-repots"],
     "exclude": ["node_modules", "dist"]
   }

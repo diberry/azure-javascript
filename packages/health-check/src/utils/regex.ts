@@ -1,11 +1,18 @@
-import { Repository } from '../models.js';
+// Update the import to use custom repo type
+export interface SimpleRepository {
+  name: string;
+  org: string;
+  repo: string;
+}
 
 // Helper function to extract repositories from README
-export function extractRepositoriesFromReadme(content: string): Repository[] {
+export function extractRepositoriesFromReadme(
+  content: string
+): SimpleRepository[] {
   // First find all reference-style links in the table
   const tableLinksRegex = /\|\s*\[([^\]]+)\]\[([^\]]+)\]\s*\|/g;
   const referenceLinks: Map<string, string> = new Map();
-  const repos: Repository[] = [];
+  const repos: SimpleRepository[] = [];
 
   // Then find all reference definitions
   const refDefinitionRegex =
@@ -51,26 +58,18 @@ export function extractRepositoriesFromReadme(content: string): Repository[] {
 /**
  * Converts an array of GitHub URLs to an array of Repository objects
  * @param {string[]} githubUrls - Array of GitHub repository URLs
- * @returns {Repository[]} - Array of Repository objects
+ * @returns {SimpleRepository[]} - Array of Repository objects
  */
-export function extractOrgAndRepo(githubUrls: string[]): Repository[] {
+export function extractOrgAndRepo(githubUrls: string[]): SimpleRepository[] {
   return githubUrls.map((url: string) => {
-    // Extract the org/repo part from the GitHub URL
-    const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)$/i);
+    const [org, repo] = url.split('/');
 
-    if (match && match[1] && match[2]) {
-      return {
-        name: match[2], // Using repo name as the display name
-        org: match[1],
-        repo: match[2],
-      };
-    }
+    console.log(`Extracted org: ${org}, repo: ${repo} from URL: ${url}`);
 
-    // Return a default Repository object if pattern doesn't match
     return {
-      name: 'unknown',
-      org: 'unknown',
-      repo: url,
+      name: url,
+      org,
+      repo,
     };
   });
 }

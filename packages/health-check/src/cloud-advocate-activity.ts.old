@@ -1,0 +1,181 @@
+// filepath: /workspaces/azure-javascript/packages/health-check/src/cloud-advocate-activity.ts
+import { promises as fs } from 'fs';
+import path from 'path';
+import { Octokit } from 'octokit';
+import { RepositoryItemExtened } from './models.js';
+import ReportGenerator from './reports/report-generator.js';
+import { printEnv } from './utils/print-env.js';
+import { getAuthToken } from './auth/get-auth-token.js';
+import GitHubSearcher from './github/github-search.js';
+
+// Print environment variables for debugging
+printEnv();
+
+// Check for GitHub token
+if (!process.env.GITHUB_TOKEN && !process.argv[2]) {
+  throw new Error(
+    'GitHub token is required. Set GITHUB_TOKEN environment variable or pass token as argument.'
+  );
+}
+
+const token = getAuthToken(process.argv[2]);
+
+if (!token) {
+  console.error(
+    'GitHub token not provided. Please set GITHUB_TOKEN environment variable or pass as first argument.'
+  );
+  process.exit(1);
+}
+
+/**
+ * Main function to analyze Cloud Advocate contributions to sample repositories
+ */
+async function analyzeCloudAdvocateActivity(
+  token: string,
+  daysBack: number = 30
+): Promise<void> {
+  console.log(
+    `🔍 Analyzing Cloud Advocate contributions over the last ${daysBack} days...`
+  );
+
+  try {
+    // Initialize GitHub API client
+    const octokit = new Octokit({ auth: token });
+    const searcher = new GitHubSearcher(token);
+
+    // Define Cloud Advocates GitHub usernames
+    // This could be loaded from a configuration file in a real implementation
+    const cloudAdvocates = [
+      'diberry',
+      'glaucia86',
+      'softchris',
+      'brandonh-msft',
+      'cxli233',
+      'darrylcauldwell',
+      'jaydestro',
+      'nitya',
+      'jenlooper',
+      'burkeholland',
+      'johnmaeda',
+      'cecilphillip',
+      'shanepeckham',
+      'meaghanlewis',
+    ];
+
+    // Load existing repos from microsoft-repos.json for context
+    const reposFilePath = path.resolve(
+      process.cwd(),
+      '../../microsoft-repos.json'
+    );
+    console.log(`Loading existing repos from: ${reposFilePath}`);
+
+    let existingRepos: string[] = [];
+    try {
+      const reposFileContent = await fs.readFile(reposFilePath, 'utf-8');
+      existingRepos = JSON.parse(reposFileContent);
+      console.log(`Found ${existingRepos.length} existing repositories`);
+    } catch (error) {
+      console.error(
+        `Error loading microsoft-repos.json: ${error instanceof Error ? error.message : String(error)}`
+      );
+      console.warn('Proceeding with empty existing repos list');
+    }
+
+    // Find repositories with Cloud Advocate contributions
+    console.log('Finding repositories with Cloud Advocate contributions...');
+    const advocateRepos: RepositoryItemExtened[] =
+      await searcher.findCloudAdvocateContributedRepos([], daysBack);
+
+    // If no repositories found, exit early
+    if (advocateRepos.length === 0) {
+      console.log(
+        'No repositories found with Cloud Advocate contributions in the specified time period.'
+      );
+      return;
+    }
+
+    console.log(
+      `Found ${advocateRepos.length} repositories with Cloud Advocate contributions`
+    );
+
+    // Map to store contribution data: repo -> {advocate -> contribution count}
+    const advocateContributions = new Map<string, Map<string, number>>();
+
+    // For each repository, fetch contributor statistics
+    console.log('Analyzing contribution details...');
+    for (const repo of advocateRepos) {
+      const [owner, repoName] = repo.full_name.split('/');
+      console.log(`Analyzing contributions for ${repo.full_name}...`);
+
+      try {
+        // Fetch commits for the repository within the time period
+        const date = new Date();
+        date.setDate(date.getDate() - daysBack);
+        const dateString = date.toISOString().split('T')[0];
+
+        // Get commits since the specified date
+        const commitsResponse = await octokit.rest.repos.listCommits({
+          owner,
+          repo: repoName,
+          since: `${dateString}T00:00:00Z`,
+          per_page: 100, // Limit to 100 most recent commits
+        });
+
+        // Create entry for this repo in the contributions map
+        const repoContributors = new Map<string, number>();
+        advocateContributions.set(repo.full_name, repoContributors);
+
+        // Process all commits and count by author
+        for (const commit of commitsResponse.data) {
+          const authorLogin = commit.author?.login;
+
+          // Skip if no author or not a Cloud Advocate
+          if (!authorLogin || !cloudAdvocates.includes(authorLogin)) {
+            continue;
+          }
+
+          // Increment contribution count for this author
+          const currentCount = repoContributors.get(authorLogin) || 0;
+          repoContributors.set(authorLogin, currentCount + 1);
+        }
+
+        console.log(
+          `Found contributions from ${repoContributors.size} Cloud Advocates in ${repo.full_name}`
+        );
+      } catch (error) {
+        console.warn(
+          `Error analyzing contributions for ${repo.full_name}: ${error}`
+        );
+      }
+
+      // Add a short delay to avoid hitting API rate limits
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Generate a report using the enhanced ReportGenerator
+    const report = ReportGenerator.generateCloudAdvocateActivityReport(
+      advocateRepos,
+      advocateContributions
+    );
+
+    // Write the report to file
+    const outputFileName = 'cloud_advocate_activity_report.md';
+    const outputPath = path.resolve(process.cwd(), '../../', outputFileName);
+    await fs.writeFile(outputPath, report);
+
+    console.log(`✅ Cloud Advocate activity report saved to ${outputFileName}`);
+  } catch (error) {
+    console.error(
+      `Error analyzing Cloud Advocate activity: ${error instanceof Error ? error.message : String(error)}`
+    );
+    process.exit(1);
+  }
+}
+
+// Execute the main function with 30 days as the default period
+analyzeCloudAdvocateActivity(token, 30).catch(error => {
+  console.error(
+    `Fatal error: ${error instanceof Error ? error.message : String(error)}`
+  );
+  process.exit(1);
+});

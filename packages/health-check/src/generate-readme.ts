@@ -1,9 +1,9 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import RepoDataCollector from './github/github-repo-data-collector.js';
+import RepoDataCollector from './github/github-repo.js';
 import { getAuthToken } from './auth/get-auth-token.js';
 import { printEnv } from './utils/print-env.js';
-import { RepoData, Repository } from './models.js';
+import { RepoData } from './models.js';
 import ReportGenerator from './reports/report-generator.js';
 import { extractOrgAndRepo } from './utils/regex.js';
 
@@ -30,9 +30,9 @@ async function run(token: string): Promise<void> {
     // Initialize data collector
     const collector = new RepoDataCollector(token);
 
-    const dataFile = process.env.DATA_FILE || 'repos.json';
+    const dataFile = process.env.DATA_FILE || 'microsoft-repos.json';
 
-    // Read repos.json
+    // Read microsoft-repos.json
     const reposJsonPath: string = path.join(process.cwd(), '../../', dataFile);
     console.log(`Reading JSON list from ${reposJsonPath}`);
     const reposContent: string = await fs.readFile(reposJsonPath, 'utf8');
@@ -41,24 +41,19 @@ async function run(token: string): Promise<void> {
     // Extract repositories
     const reposJson = JSON.parse(reposContent);
     console.log(`Found ${reposJson.length} repositories in `, dataFile);
-    const repos: Repository[] = extractOrgAndRepo(reposJson);
+    const repos: Array<{ org: string; repo: string }> =
+      extractOrgAndRepo(reposJson);
 
     // Collect data for each repository using the enhanced collectRepoData
     const reposWithData: RepoData[] = [];
-    for (const repo of repos) {
-      console.log(`Processing ${repo.org}/${repo.repo}...`);
+    for (const repoItem of repos) {
+      console.log(`Collect repo data ${repoItem.org}/${repoItem.repo}...`);
 
       // Use collectRepoData to get all repository information at once
-      const repoData: RepoData = await collector.collectRepoData(repo);
+      const repoData = await collector.collectRepoData(repoItem);
 
-      reposWithData.push({
-        ...repo,
-        description: repoData.description,
-        stars: repoData.stars,
-        watchers: repoData.watchers,
-        lastCommitDate: repoData.lastCommitDate,
-        topics: repoData.topics,
-      });
+      // We have all the data we need from collectRepoData - no need to cherry pick
+      reposWithData.push(repoData);
     }
 
     // Generate new README content
